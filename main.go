@@ -59,20 +59,39 @@ func productIDMatch(id string) (*product, error) {
 func getProductByID(context *gin.Context) {
 	id := context.Param("id")
 
-	result, err := productIDMatch(id)
+	matchingProduct, err := productIDMatch(id)
 
 	if err != nil {
 		context.IndentedJSON(http.StatusNotFound, gin.H{"message": "product not found"})
 		return
 	}
 
-	context.IndentedJSON(http.StatusOK, result)
+	context.IndentedJSON(http.StatusOK, matchingProduct)
+}
+
+func updateQuantity(context *gin.Context) {
+	id := context.Param("id")
+
+	matchingProduct, err := productIDMatch(id)
+
+	if err != nil {
+		context.IndentedJSON(http.StatusNotFound, gin.H{"message": "product not found"})
+		return
+	}
+
+	if err := context.BindJSON(&matchingProduct); err != nil {
+		return
+	}
+
+	context.IndentedJSON(http.StatusOK, matchingProduct)
+
 }
 
 func main() {
 	router := gin.Default()
 	router.GET("/products", getProducts)
 	router.GET("/products/:id", getProductByID)
+	router.PATCH("/products/:id", updateQuantity)
 	router.POST("/products", addProduct)
 	router.Run("localhost:9090")
 
