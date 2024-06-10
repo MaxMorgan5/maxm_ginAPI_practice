@@ -1,6 +1,7 @@
 package main
 
 import (
+	"errors"
 	"net/http"
 
 	"github.com/gin-gonic/gin"
@@ -40,10 +41,39 @@ func addProduct(context *gin.Context) {
 	context.IndentedJSON(http.StatusCreated, newProduct)
 }
 
+// helper func for router func. Loops over products slice to search for ID that matches id in arg
+// returns a pointer to the correct product or an err if not found
+func productIDMatch(id string) (*product, error) {
+	for index, product := range products {
+		if product.ID == id {
+			return &products[index], nil
+		}
+	}
+
+	return nil, errors.New("product not found")
+}
+
+// retrieve ID from http request.
+// call helper func and store result, check for err.
+// if no err, return the matching product as a json response and a 200 status code
+func getProductByID(context *gin.Context) {
+	id := context.Param("id")
+
+	result, err := productIDMatch(id)
+
+	if err != nil {
+		context.IndentedJSON(http.StatusNotFound, gin.H{"message": "product not found"})
+		return
+	}
+
+	context.IndentedJSON(http.StatusOK, result)
+}
+
 func main() {
 	router := gin.Default()
 	router.GET("/products", getProducts)
-
+	router.GET("/products/:id", getProductByID)
+	router.POST("/products", addProduct)
 	router.Run("localhost:9090")
 
 }
